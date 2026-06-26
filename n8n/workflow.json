@@ -1,0 +1,741 @@
+{
+  "name": "Personal Brand AI OS — Daily Content Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Daily Schedule 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        400
+      ],
+      "notes": "Triggers every day at 08:00. Set timezone in workflow Settings panel."
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "create",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are the Research Agent for a Personal Brand AI Operating System. Audience: Beginner endurance athletes (triathlon, Ironman, running, cycling, swimming, strength, nutrition, recovery, discipline, training while working full-time, lifestyle). Always output PT-BR and EN-GB — never literally translate, adapt naturally. Never use corporate language. Return ONLY valid JSON, no markdown fences."
+            },
+            {
+              "role": "user",
+              "content": "Generate 10 content opportunities for today. Return a JSON array with: id, title_ptbr, title_engb, topic, content_pillar (Education|Motivation|Story|Tutorial|Lifestyle|Nutrition|Recovery|Training), why_it_matters, emotional_trigger, share_potential (1-10), save_potential (1-10), follower_growth_potential (1-10), required_media, can_be_ai_generated (Yes/No), recording_instructions (null if AI only). JSON array only."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.8,
+          "maxTokens": 4000
+        }
+      },
+      "id": "research-agent",
+      "name": "Research Agent",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        480,
+        400
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-cred",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "create",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are the Strategy Agent. Select the top 3 content ideas most likely to generate shares, saves, profile visits and follower conversion. Reject generic, too-broad, or off-audience ideas. Return ONLY valid JSON, no markdown fences."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Research Agent output: ' + $json.message.content + '\\n\\nSelect top 3 ideas. Return JSON array with: selected_idea_id, title_ptbr, title_engb, reason_for_selection, target_emotion, target_audience_segment, kpi_expectation (object: shares/saves/profile_visits/follower_conversion as Low|Medium|High), risk, confidence_score (1-100). JSON array only.' }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.5,
+          "maxTokens": 2000
+        }
+      },
+      "id": "strategy-agent",
+      "name": "Strategy Agent",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        720,
+        400
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-cred",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "create",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are the Idea Agent. Turn approved strategy into detailed Instagram Reel concepts. Hooks must be visceral — no starting with 'I' or 'Today I will show you'. PT-BR and EN-GB must feel native, not translated. Return ONLY valid JSON, no markdown fences."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Approved strategy: ' + $json.message.content + '\\n\\nCreate Reel concepts. Return JSON array with: idea_id, title_ptbr, title_engb, hook_3sec_ptbr, hook_3sec_engb, visual_concept, story_angle, cta_ptbr, cta_engb, suggested_duration_seconds (15-60), recording_requirements, can_use_existing_footage (Yes/No), existing_footage_description, can_use_ai_assets (Yes/No), ai_assets_description, format_type (Talking Head|B-roll Montage|Text on Screen|Mixed|Tutorial|Training POV). JSON array only.' }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 3000
+        }
+      },
+      "id": "idea-agent",
+      "name": "Idea Agent",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        960,
+        400
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-cred",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "create",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are the Script Agent. Write short, high-retention Instagram Reel scripts. Rules: max 45 seconds, strong first 3 seconds, no 'hey guys' or warm-up, dual language PT-BR and EN-GB (never translate — adapt naturally), one CTA only, no corporate language. Return ONLY valid JSON, no markdown fences."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Reel concepts: ' + $json.message.content + '\\n\\nWrite complete scripts. Return JSON array with: idea_id, title_ptbr, title_engb, script_ptbr ([HOOK][BODY][CTA] markers), script_engb (naturally adapted), onscreen_text_ptbr (array), onscreen_text_engb (array), caption_ptbr (with hashtags), caption_engb (with hashtags), cta_ptbr, cta_engb, hashtags_ptbr (array), hashtags_engb (array), estimated_duration_seconds. JSON array only.' }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 4000
+        }
+      },
+      "id": "script-agent",
+      "name": "Script Agent",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        400
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-cred",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "create",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are the Production Brief Agent. Create precise production briefs. CRITICAL: Never assume footage exists. Always explicitly state what must be recorded with exact instructions (angle, lighting, duration, movement, time of day). Always require subtitles in both PT-BR and EN-GB. Return ONLY valid JSON, no markdown fences."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Scripts: ' + $json.message.content + '\\n\\nCreate production briefs. Return JSON array with: idea_id, title_ptbr, title_engb, required_footage (array: shot_number, description, source New Recording|Existing Library|AI Generated, priority Essential|Optional), new_footage_required (Yes/No), recording_instructions, ai_generated_assets (array: asset_type, description, tool_suggestion), broll_suggestions (array), thumbnail_idea (object: visual, text_overlay, emotion), editing_notes, music_audio_suggestion (object: mood, tempo, suggested_track_style, royalty_free_source), subtitles_required (Yes), subtitle_language (Both), export_format (object: resolution 1080x1920, aspect_ratio 9:16, frame_rate, format MP4, max_duration_seconds). JSON array only.' }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.5,
+          "maxTokens": 4000
+        }
+      },
+      "id": "production-brief-agent",
+      "name": "Production Brief Agent",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        400
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-cred",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "operation": "create",
+        "model": "gpt-4o",
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are the Quality Control Agent. Score content packages on 8 dimensions (1-100 each): hook_strength, clarity, retention_potential, share_potential, save_potential, follower_conversion, brand_fit, production_feasibility. Average = overall_score. If overall_score >= 85 AND no dimension < 60: APPROVED. Otherwise: REJECTED with improved version. Return ONLY valid JSON array, no markdown fences."
+            },
+            {
+              "role": "user",
+              "content": "={{ 'Scripts and production briefs: ' + $json.message.content + '\\n\\nScore and review each package. Return JSON array with: idea_id, title_ptbr, title_engb, scores (object with all 8 dimensions), overall_score, approval_status (APPROVED or REJECTED), issues (array), improved_script_ptbr (or null), improved_script_engb (or null), final_package (object: title_ptbr, title_engb, hook_ptbr, hook_engb, script_ptbr, script_engb, caption_ptbr, caption_engb, cta_ptbr, cta_engb, recording_needed Yes/No, recording_instructions or null, ai_only Yes/No, suggested_publish_date ISO string, notion_status). JSON array only.' }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 5000
+        }
+      },
+      "id": "qc-agent",
+      "name": "Quality Control Agent",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        400
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "openai-cred",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawContent = $input.item.json.message.content;\nlet qcResults;\ntry {\n  qcResults = JSON.parse(rawContent);\n} catch(e) {\n  const match = rawContent.match(/```(?:json)?\\s*([\\s\\S]*?)```/);\n  if (match) {\n    try { qcResults = JSON.parse(match[1]); } catch(e2) { throw new Error('Could not parse QC output: ' + e2.message); }\n  } else {\n    throw new Error('Could not parse QC output: ' + e.message);\n  }\n}\nconst items = [];\nfor (const item of qcResults) {\n  items.push({\n    json: {\n      ...item,\n      is_approved: item.approval_status === 'APPROVED',\n      run_date: new Date().toISOString().split('T')[0]\n    }\n  });\n}\nreturn items;"
+      },
+      "id": "parse-qc",
+      "name": "Parse QC Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "approved-check",
+              "leftValue": "={{ $json.is_approved }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "approval-router",
+      "name": "Approved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": "={{ $env.NOTION_CONTENT_PIPELINE_DB_ID }}",
+        "title": "={{ $json.final_package.title_engb + ' | ' + $json.final_package.title_ptbr }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status",
+              "type": "select",
+              "selectValue": "Ready for Review"
+            },
+            {
+              "key": "Priority",
+              "type": "select",
+              "selectValue": "High"
+            },
+            {
+              "key": "Platform",
+              "type": "select",
+              "selectValue": "Instagram"
+            },
+            {
+              "key": "Language",
+              "type": "select",
+              "selectValue": "PT-BR + EN-GB"
+            },
+            {
+              "key": "Hook PT-BR",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.hook_ptbr }}"
+            },
+            {
+              "key": "Hook EN-GB",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.hook_engb }}"
+            },
+            {
+              "key": "Script PT-BR",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.script_ptbr }}"
+            },
+            {
+              "key": "Script EN-GB",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.script_engb }}"
+            },
+            {
+              "key": "Caption PT-BR",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.caption_ptbr }}"
+            },
+            {
+              "key": "Caption EN-GB",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.caption_engb }}"
+            },
+            {
+              "key": "CTA PT-BR",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.cta_ptbr }}"
+            },
+            {
+              "key": "CTA EN-GB",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.cta_engb }}"
+            },
+            {
+              "key": "Recording Needed",
+              "type": "checkbox",
+              "checkboxValue": "={{ $json.final_package.recording_needed === 'Yes' }}"
+            },
+            {
+              "key": "Recording Instructions",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.recording_instructions || 'N/A' }}"
+            },
+            {
+              "key": "AI Only",
+              "type": "checkbox",
+              "checkboxValue": "={{ $json.final_package.ai_only === 'Yes' }}"
+            },
+            {
+              "key": "Publish Date",
+              "type": "date",
+              "dateValue": "={{ $json.final_package.suggested_publish_date }}"
+            },
+            {
+              "key": "Approval Status",
+              "type": "select",
+              "selectValue": "Approved"
+            },
+            {
+              "key": "Published",
+              "type": "checkbox",
+              "checkboxValue": false
+            }
+          ]
+        }
+      },
+      "id": "notion-approved",
+      "name": "Notion — Create Approved Item",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        280
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "notion-cred",
+          "name": "Notion API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": "={{ $env.NOTION_CONTENT_PIPELINE_DB_ID }}",
+        "title": "={{ '[NEEDS IMPROVEMENT] ' + $json.final_package.title_engb }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status",
+              "type": "select",
+              "selectValue": "Needs Improvement"
+            },
+            {
+              "key": "Platform",
+              "type": "select",
+              "selectValue": "Instagram"
+            },
+            {
+              "key": "Language",
+              "type": "select",
+              "selectValue": "PT-BR + EN-GB"
+            },
+            {
+              "key": "Hook PT-BR",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.hook_ptbr }}"
+            },
+            {
+              "key": "Hook EN-GB",
+              "type": "richText",
+              "textContent": "={{ $json.final_package.hook_engb }}"
+            },
+            {
+              "key": "Script PT-BR",
+              "type": "richText",
+              "textContent": "={{ ($json.improved_script_ptbr || $json.final_package.script_ptbr) + '\\n\\n---\\nISSUES: ' + ($json.issues || []).join(', ') }}"
+            },
+            {
+              "key": "Script EN-GB",
+              "type": "richText",
+              "textContent": "={{ $json.improved_script_engb || $json.final_package.script_engb }}"
+            },
+            {
+              "key": "Approval Status",
+              "type": "select",
+              "selectValue": "Needs Improvement"
+            },
+            {
+              "key": "Published",
+              "type": "checkbox",
+              "checkboxValue": false
+            }
+          ]
+        }
+      },
+      "id": "notion-rejected",
+      "name": "Notion — Create Rejected Item",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        540
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "notion-cred",
+          "name": "Notion API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\nconst date = new Date().toISOString().split('T')[0];\nconst safeTitle = (item.final_package.title_engb || 'untitled').replace(/[^a-zA-Z0-9 ]/g, '').replace(/\\s+/g, '_').substring(0, 50);\nconst folderName = date + '_' + safeTitle;\nconst scriptContent = [\n  'PERSONAL BRAND AI OS — CONTENT PACKAGE',\n  '=====================================',\n  'Date: ' + date,\n  'Title (EN-GB): ' + item.final_package.title_engb,\n  'Title (PT-BR): ' + item.final_package.title_ptbr,\n  'Status: ' + item.final_package.notion_status,\n  'QC Score: ' + item.overall_score + '/100',\n  '',\n  '--- HOOK ---',\n  'PT-BR: ' + item.final_package.hook_ptbr,\n  'EN-GB: ' + item.final_package.hook_engb,\n  '',\n  '--- SCRIPT PT-BR ---',\n  item.final_package.script_ptbr,\n  '',\n  '--- SCRIPT EN-GB ---',\n  item.final_package.script_engb,\n  '',\n  '--- CAPTION PT-BR ---',\n  item.final_package.caption_ptbr,\n  '',\n  '--- CAPTION EN-GB ---',\n  item.final_package.caption_engb,\n  '',\n  '--- CTA ---',\n  'PT-BR: ' + item.final_package.cta_ptbr,\n  'EN-GB: ' + item.final_package.cta_engb,\n  '',\n  '--- PRODUCTION ---',\n  'Recording Needed: ' + item.final_package.recording_needed,\n  'Recording Instructions: ' + (item.final_package.recording_instructions || 'N/A'),\n  'AI Only: ' + item.final_package.ai_only,\n  'Suggested Publish Date: ' + item.final_package.suggested_publish_date\n].join('\\n');\nreturn [{ json: { ...item, folder_name: folderName, script_content: scriptContent, notion_page_id: $('Notion — Create Approved Item').item.json.id } }];"
+      },
+      "id": "prep-drive",
+      "name": "Prepare Drive Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "createFolder",
+        "name": "={{ $json.folder_name }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $env.GOOGLE_DRIVE_FOLDER_ID }}"
+        },
+        "options": {}
+      },
+      "id": "gdrive-folder",
+      "name": "Google Drive — Create Post Folder",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2880,
+        280
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gdrive-cred",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "name": "={{ $('Prepare Drive Content').item.json.folder_name + '_script.txt' }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "binaryData": false,
+        "fileContent": "={{ $('Prepare Drive Content').item.json.script_content }}",
+        "options": {
+          "mimeType": "text/plain"
+        }
+      },
+      "id": "gdrive-upload",
+      "name": "Google Drive — Upload Script",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        3120,
+        280
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "gdrive-cred",
+          "name": "Google Drive OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": "={{ $('Notion — Create Approved Item').item.json.id }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Google Drive Folder",
+              "type": "url",
+              "urlValue": "={{ 'https://drive.google.com/drive/folders/' + $('Google Drive — Create Post Folder').item.json.id }}"
+            }
+          ]
+        }
+      },
+      "id": "notion-update-drive",
+      "name": "Notion — Update Drive Link",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [
+        3360,
+        280
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "notion-cred",
+          "name": "Notion API"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily Schedule 08:00": {
+      "main": [
+        [
+          {
+            "node": "Research Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Agent": {
+      "main": [
+        [
+          {
+            "node": "Strategy Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Strategy Agent": {
+      "main": [
+        [
+          {
+            "node": "Idea Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Idea Agent": {
+      "main": [
+        [
+          {
+            "node": "Script Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Script Agent": {
+      "main": [
+        [
+          {
+            "node": "Production Brief Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Production Brief Agent": {
+      "main": [
+        [
+          {
+            "node": "Quality Control Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quality Control Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse QC Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse QC Results": {
+      "main": [
+        [
+          {
+            "node": "Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approved?": {
+      "main": [
+        [
+          {
+            "node": "Notion — Create Approved Item",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notion — Create Rejected Item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion — Create Approved Item": {
+      "main": [
+        [
+          {
+            "node": "Prepare Drive Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Drive Content": {
+      "main": [
+        [
+          {
+            "node": "Google Drive — Create Post Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive — Create Post Folder": {
+      "main": [
+        [
+          {
+            "node": "Google Drive — Upload Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive — Upload Script": {
+      "main": [
+        [
+          {
+            "node": "Notion — Update Drive Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "timezone": "Europe/Lisbon"
+  },
+  "tags": [
+    "personal-brand",
+    "content-pipeline",
+    "ai-os"
+  ]
+}
